@@ -9,7 +9,7 @@ class Travel
 
 
     /**
-     * get raw data from REST Api.
+     * get raw data from REST Api travels.
      *
      * @return array
      */
@@ -26,7 +26,7 @@ class Travel
     }
 
     /**
-     * get raw data from REST Api.
+     * handle data and count cost for each company id.
      *
      * @return array
      */
@@ -48,11 +48,14 @@ class Travel
 
 class Company
 {
-    // Enter your code here
-
+    /**
+     * get raw data from REST Api companies.
+     *
+     * @return array
+     */
     public function getDataFromApi()
     {
-        $url = 'https://5f27781bf5d27e001612e057.mockapi.io/webprovise/companies';
+        $url = COMPANY_URL;
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_HTTPGET, true);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -63,6 +66,12 @@ class Company
         return $items;
     }
 
+    /**
+     * making tree company with cost.
+     *
+     * @param array $items
+     * @return array
+     */
     public function handleData($items)
     {
         $childs = [];
@@ -77,19 +86,32 @@ class Company
         return $tree;
     }
 
+    /**
+     * create tree array.
+     *
+     * @param array $list
+     * @param array $parent
+     * @return array
+     */
     private function createTree(&$list, $parent)
     {
         $tree = [];
-        foreach ($parent as $k => $l) {
-            if (isset($list[$l['id']])) {
-                $l['children'] = $this->createTree($list, $list[$l['id']]);
+        foreach ($parent as $item) {
+            if (isset($list[$item['id']])) {
+                $item['children'] = $this->createTree($list, $list[$item['id']]);
             }
-
-            $tree[] = $l;
+            $tree[] = $item;
         }
+
         return $tree;
     }
 
+     /**
+     * update cost for every node tree.
+     *
+     * @param array $node
+     * @return array
+     */
     private function updateCost(&$node)
     {
         $children = null;
@@ -111,9 +133,6 @@ class TestScript
     public function execute()
     {
         $start = microtime(true);
-        // Enter your code here
-        // echo json_encode($result);
-
         $company = new Company();
         $companyData = $company->getDataFromApi();
         $travels = (new Travel())->handleData();
@@ -127,26 +146,7 @@ class TestScript
         }
         $result = $company->handleData($companyData);
         echo json_encode($result);
-        // echo 'Total time: '.  (microtime(true) - $start);
-    }
-
-    public function handleChildren(&$company, $travels)
-    {
-        foreach ($company as $child) {
-            if (isset($child['children'])) {
-                foreach ($child['children'] as $item) {
-                    if (is_array($item)) {
-                    }
-                }
-            }
-            if (!isset($child['children']) && is_array($child)) {
-                if (isset($travels[$child['id']])) {
-                    $child['children'] = $travels[$child['id']];
-                    return;
-                }
-            }
-            $this->handleChildren($child, $travels);
-        }
+        echo 'Total time: '.  (microtime(true) - $start);
     }
 }
 
